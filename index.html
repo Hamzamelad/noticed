@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Notes and guided problem-solving tools that work offline.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161917" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Noticed">
+<title>Noticed — a problem-solving toolkit</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --text: #1f2421; --muted: #6b726d;
+    --line: #e3e1da; --accent: #2f7d5b; --accent-soft: #e2f1ea; --danger: #b3412f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161917; --card: #1f2321; --text: #e8ebe8; --muted: #98a19b;
+      --line: #2e3431; --accent: #6fc39c; --accent-soft: #24382f; --danger: #e08070;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: calc(20px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(80px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .tabs { display: flex; gap: 4px; background: var(--line); padding: 3px; border-radius: 10px; }
+  .tabs button { border: 0; background: transparent; color: var(--muted); padding: 6px 14px; border-radius: 8px; font: inherit; font-size: 14px; cursor: pointer; }
+  .tabs button.on { background: var(--card); color: var(--text); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  textarea, input[type=text], input[type=number], input[type=search] {
+    width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 10px; font: inherit;
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .row > .grow { flex: 1; min-width: 160px; }
+  .row > .narrow { width: 110px; }
+  button.primary { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+  @media (prefers-color-scheme: dark) { button.primary { color: #10231a; } }
+  button.ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  button.ghost:hover { color: var(--text); border-color: var(--muted); }
+  button.ghost.danger:hover { color: var(--danger); border-color: var(--danger); }
+  .filters { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .filters input { flex: 1; min-width: 180px; background: var(--card); }
+  .filters select { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: inherit; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { background: var(--accent-soft); color: var(--accent); border: 0; border-radius: 999px; padding: 2px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+  .chip.on { background: var(--accent); color: var(--card); }
+  .types .chip { padding: 5px 14px; font-size: 14px; background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .types .chip.on { background: var(--accent); color: var(--card); border-color: var(--accent); }
+  .note .meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 6px; gap: 8px; }
+  .note .text { white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 500; }
+  .note .takeaway { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; padding: 8px 10px; background: var(--accent-soft); border-radius: 8px; font-size: 15px; }
+  .takeaway small, .future small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); font-weight: 600; margin-bottom: 2px; }
+  .note .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .note.resolved .text { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+  .badge { font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); }
+  .badge.done { color: var(--accent); border-color: var(--accent); }
+  .actions { display: flex; gap: 6px; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .stat b { display: block; font-size: 24px; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .future { display: block; width: 100%; text-align: start; font: inherit; color: inherit; background: var(--accent-soft); border: 0; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; cursor: pointer; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .future .from { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar { display: grid; grid-template-columns: 120px 1fr 30px; gap: 8px; align-items: center; font-size: 14px; margin: 5px 0; cursor: pointer; background: none; border: 0; color: inherit; width: 100%; text-align: start; padding: 0; font-family: inherit; }
+  .bar .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .track { background: var(--line); border-radius: 4px; height: 8px; }
+  .bar .fill { background: var(--accent); border-radius: 4px; height: 8px; }
+  .bar .n { color: var(--muted); text-align: end; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  svg { width: 100%; height: auto; display: block; }
+  .hint { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .readings { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .reading { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px 2px 8px; }
+  .reading button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 13px; }
+  .tool { display: block; width: 100%; text-align: start; font: inherit; color: inherit; cursor: pointer; }
+  .tool:hover { border-color: var(--accent); }
+  .tool b, .tool span, .tool small { display: block; }
+  .tool span { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .tool small { color: var(--accent); font-size: 12px; margin-top: 6px; }
+  select.full { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; font: inherit; }
+  .timer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+  .timer b { font-size: 24px; font-variant-numeric: tabular-nums; }
+  .timer span { flex: 1; min-width: 160px; font-size: 14px; }
+  .pairnote { background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
+  .rank { display: grid; grid-template-columns: 1fr 64px 64px; gap: 8px; align-items: center; margin: 6px 0; font-size: 14px; }
+  .rank.head { color: var(--muted); font-size: 12px; }
+  .rank select { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px; font: inherit; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Noticed</h1>
+    <div class="tabs">
+      <button id="tabNotes" class="on">Notes</button>
+      <button id="tabTools">Toolkit</button>
+      <button id="tabPatterns">Patterns</button>
+    </div>
+  </header>
+
+  <section id="viewNotes">
+    <form class="card" id="form">
+      <div class="chips types" id="typePick"></div>
+      <label for="text" id="textLabel"></label>
+      <textarea id="text" dir="auto" required></textarea>
+      <label for="takeaway" id="takeawayLabel"></label>
+      <textarea id="takeaway" dir="auto"></textarea>
+      <div class="row">
+        <div class="grow">
+          <label for="tags">Tags</label>
+          <input type="text" id="tags" dir="auto" placeholder="work, health, people">
+        </div>
+        <div class="narrow">
+          <label for="metric" id="metricLabel"></label>
+          <input type="number" id="metric" step="any" placeholder="optional">
+        </div>
+        <button class="primary" id="saveBtn">Save</button>
+        <button type="button" class="ghost hidden" id="cancelBtn">Cancel</button>
+      </div>
+    </form>
+
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search notes…" dir="auto">
+      <select id="typeFilter"></select>
+    </div>
+    <div class="chips" id="tagFilter" style="margin-bottom:12px"></div>
+    <div id="list"></div>
+  </section>
+
+  <section id="viewTools" class="hidden">
+    <div id="toolList"></div>
+    <div id="toolRun" class="hidden"></div>
+  </section>
+
+  <section id="viewPatterns" class="hidden">
+    <div class="stats" id="stats"></div>
+
+    <div class="card">
+      <h2>For the future — your takeaways</h2>
+      <div id="futureList"></div>
+    </div>
+
+    <div class="card">
+      <h2>What you write about</h2>
+      <div id="topTypes"></div>
+      <div id="topTags" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Recurring words</h2>
+      <div id="topWords"></div>
+    </div>
+
+    <div class="card">
+      <div class="headrow">
+        <h2 id="metricTitle"></h2>
+        <button class="ghost" id="renameMetric">Rename</button>
+      </div>
+      <form class="row" id="metricForm">
+        <div class="grow">
+          <input type="number" id="metricOnly" step="any" placeholder="Log a reading" required>
+        </div>
+        <button class="primary">Log</button>
+      </form>
+      <div id="chart" style="margin-top:12px"></div>
+      <div id="compare"></div>
+      <div class="readings" id="readings"></div>
+    </div>
+
+    <div class="card">
+      <h2>Backup</h2>
+      <div class="row">
+        <button class="ghost" id="exportBtn">Export notes</button>
+        <button class="ghost" id="importBtn">Import</button>
+        <input type="file" id="importFile" accept="application/json" class="hidden">
+      </div>
+      <p class="hint">Everything is stored only in this browser on this device. Export now and then to keep a copy.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+const KEY = 'unload.v1';
+const TYPES = {
+  observation: { label: 'Observation', a: 'What did you notice?', b: 'How can this help in the future?', short: 'For the future' },
+  problem:     { label: 'Problem',     a: "What's the problem?",  b: 'Possible solutions',               short: 'Solutions' },
+  idea:        { label: 'Idea',        a: "What's the idea?",     b: 'Next step',                        short: 'Next step' },
+  lesson:      { label: 'Lesson',      a: 'What happened?',       b: 'What to do next time',             short: 'Next time' },
+  note:        { label: 'Note',        a: 'Note',                 b: 'Why it matters later (optional)',  short: 'For later' },
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const dayKey = t => { const d = new Date(t); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+const fmtDate = t => new Date(t).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtTime = t => new Date(t).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+const typeOf = n => TYPES[n.type] ? n.type : 'note';
+
+// Accepts current notes and the older problem/solutions shape.
+function cleanNote(n) {
+  if (!n || typeof (n.text ?? n.problem) !== 'string') return null;
+  return {
+    id: String(n.id || uid()), created: Number(n.created) || Date.now(),
+    type: TYPES[n.type] ? n.type : (n.problem !== undefined ? 'problem' : 'note'),
+    text: n.text ?? n.problem, takeaway: String(n.takeaway ?? n.solutions ?? ''),
+    tags: Array.isArray(n.tags) ? n.tags.map(String) : [], resolved: !!n.resolved,
+  };
+}
+function cleanReading(r) {
+  const v = Number(r && r.value);
+  return r && r.value !== '' && Number.isFinite(v) ? { id: String(r.id || uid()), t: Number(r.t) || Date.now(), value: v } : null;
+}
+
+let db = { notes: [], readings: [], metric: 'Stress' };
+try {
+  const raw = JSON.parse(localStorage.getItem(KEY));
+  if (raw && Array.isArray(raw.notes)) db = {
+    notes: raw.notes.map(cleanNote).filter(Boolean),
+    readings: (raw.readings || raw.stress || []).map(cleanReading).filter(Boolean),
+    metric: raw.metric || 'Stress',
+  };
+} catch (e) {}
+const save = () => localStorage.setItem(KEY, JSON.stringify(db));
+
+let editingId = null, activeTag = null, focusId = null, formType = 'observation';
+
+function parseTags(tagText, bodyText) {
+  const fromField = tagText.split(/[,،\n]+/).map(s => s.trim());
+  const fromBody = (bodyText.match(/#[\p{L}\p{N}_-]+/gu) || []);
+  return [...new Set([...fromField, ...fromBody].map(s => s.replace(/^#/, '').toLowerCase()).filter(Boolean))];
+}
+
+// ---------- Form ----------
+function renderForm() {
+  const t = TYPES[formType];
+  $('typePick').innerHTML = Object.entries(TYPES).map(([k, v]) =>
+    `<button type="button" class="chip ${k === formType ? 'on' : ''}" data-type="${k}">${v.label}</button>`).join('');
+  $('textLabel').textContent = t.a;
+  $('takeawayLabel').textContent = t.b;
+  $('metricLabel').textContent = db.metric + ' now';
+}
+$('typePick').addEventListener('click', e => {
+  const b = e.target.closest('[data-type]');
+  if (b) { formType = b.dataset.type; renderForm(); $('text').focus(); }
+});
+
+$('form').addEventListener('submit', e => {
+  e.preventDefault();
+  const text = $('text').value.trim();
+  if (!text) return;
+  const takeaway = $('takeaway').value.trim();
+  const tags = parseTags($('tags').value, text + ' ' + takeaway);
+  if (editingId) {
+    const n = db.notes.find(n => n.id === editingId);
+    if (n) Object.assign(n, { type: formType, text, takeaway, tags });
+  } else {
+    db.notes.push({ id: uid(), created: Date.now(), type: formType, text, takeaway, tags, resolved: false });
+  }
+  const r = cleanReading({ value: $('metric').value });
+  if (r) db.readings.push(r);
+  save(); resetForm(); render();
+});
+$('form').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') $('form').requestSubmit();
+});
+$('cancelBtn').onclick = () => resetForm();
+
+function resetForm() {
+  editingId = null;
+  $('form').reset();
+  $('saveBtn').textContent = 'Save';
+  $('cancelBtn').classList.add('hidden');
+}
+
+// ---------- Notes ----------
+function filteredNotes() {
+  if (focusId) return db.notes.filter(n => n.id === focusId);
+  const q = $('q').value.trim().toLowerCase();
+  const f = $('typeFilter').value;
+  return db.notes.filter(n => {
+    if (f === 'open' ? !(typeOf(n) === 'problem' && !n.resolved) : (f !== 'all' && typeOf(n) !== f)) return false;
+    if (activeTag && !n.tags.includes(activeTag)) return false;
+    if (q && !(n.text + '\n' + n.takeaway + '\n' + n.tags.join(' ')).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a, b) => b.created - a.created);
+}
+
+function tagCounts() {
+  const m = new Map();
+  db.notes.forEach(n => n.tags.forEach(t => m.set(t, (m.get(t) || 0) + 1)));
+  return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function renderNotes() {
+  $('tagFilter').innerHTML = focusId
+    ? `<button class="chip on" id="clearFocus">Showing one note · show all ✕</button>`
+    : tagCounts().map(([t]) => `<button class="chip ${t === activeTag ? 'on' : ''}" data-tag="${esc(t)}">#${esc(t)}</button>`).join('');
+  const notes = filteredNotes();
+  if (!notes.length) {
+    $('list').innerHTML = `<div class="empty">${db.notes.length ? 'Nothing matches.' : 'No notes yet. Write down the first thing you noticed today.'}</div>`;
+    return;
+  }
+  $('list').innerHTML = notes.map(n => {
+    const k = typeOf(n), t = TYPES[k], isProblem = k === 'problem';
+    return `
+    <div class="card note ${isProblem && n.resolved ? 'resolved' : ''}" data-id="${esc(n.id)}">
+      <div class="meta">
+        <span>${esc(fmtDate(n.created))} · ${esc(fmtTime(n.created))}</span>
+        <span class="badge ${isProblem && n.resolved ? 'done' : ''}">${t.label}${isProblem ? (n.resolved ? ' · resolved' : ' · open') : ''}</span>
+      </div>
+      <div class="text" dir="auto">${esc(n.text)}</div>
+      ${n.takeaway ? `<div class="takeaway" dir="auto"><small>${t.short}</small>${esc(n.takeaway)}</div>` : ''}
+      <div class="foot">
+        <div class="chips">${n.tags.map(t => `<button class="chip" data-tag="${esc(t)}">#${esc(t)}</button>`).join('')}</div>
+        <div class="actions">
+          ${isProblem ? `<button class="ghost" data-act="toggle">${n.resolved ? 'Reopen' : 'Resolve'}</button>` : ''}
+          <button class="ghost" data-act="work">Work on it</button>
+          <button class="ghost" data-act="edit">Edit</button>
+          <button class="ghost danger" data-act="del">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('viewNotes').addEventListener('click', e => {
+  if (e.target.closest('#clearFocus')) { focusId = null; renderNotes(); return; }
+  const tag = e.target.closest('[data-tag]');
+  if (tag) { focusId = null; activeTag = activeTag === tag.dataset.tag ? null : tag.dataset.tag; renderNotes(); return; }
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const id = btn.closest('.note').dataset.id;
+  const n = db.notes.find(n => n.id === id);
+  if (!n) return;
+  if (btn.dataset.act === 'toggle') { n.resolved = !n.resolved; save(); render(); }
+  if (btn.dataset.act === 'work') { workOn(id); return; }
+  if (btn.dataset.act === 'del' && confirm('Delete this note?')) {
+    db.notes = db.notes.filter(x => x.id !== id);
+    if (editingId === id) resetForm();
+    if (focusId === id) focusId = null;
+    save(); render();
+  }
+  if (btn.dataset.act === 'edit') {
+    editingId = id; formType = typeOf(n); renderForm();
+    $('text').value = n.text; $('takeaway').value = n.takeaway; $('tags').value = n.tags.join(', ');
+    $('metric').value = '';
+    $('saveBtn').textContent = 'Update';
+    $('cancelBtn').classList.remove('hidden');
+    $('text').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+$('q').addEventListener('input', () => { focusId = null; renderNotes(); });
+$('typeFilter').innerHTML = '<option value="all">All types</option>' +
+  Object.entries(TYPES).map(([k, v]) => `<option value="${k}">${v.label}s</option>`).join('') +
+  '<option value="open">Open problems</option>';
+$('typeFilter').addEventListener('change', () => { focusId = null; renderNotes(); });
+
+// ---------- Patterns ----------
+const STOP = new Set(('the and for that this with have from not but are was were been will would could should what when where which ' +
+  'who how why about into over than then them they their there here just like more most some such only also very much many ' +
+  'because cant dont didnt doesnt wont isnt its ive im you your mine myself can get got too out all any has had him her his she ' +
+  'our one two still even need want feel feeling know think make made does did being after before again noticed').split(' '));
+
+function wordCounts() {
+  const m = new Map();
+  db.notes.forEach(n => {
+    const words = new Set(((n.text + ' ' + n.takeaway).toLowerCase().replace(/[’']/g, '').match(/[\p{L}]{4,}/gu) || []).filter(w => !STOP.has(w)));
+    words.forEach(w => m.set(w, (m.get(w) || 0) + 1));
+  });
+  return [...m.entries()].filter(([, c]) => c >= 2).sort((a, b) => b[1] - a[1]).slice(0, 12);
+}
+
+function bars(entries, kind, label = x => x) {
+  const max = Math.max(...entries.map(e => e[1]));
+  return entries.map(([name, c]) => `
+    <button class="bar" data-${kind}="${esc(name)}">
+      <span class="name" dir="auto">${esc(label(name))}</span>
+      <span class="track"><span class="fill" style="display:block;width:${Math.round(c / max * 100)}%"></span></span>
+      <span class="n">${c}</span>
+    </button>`).join('');
+}
+
+const avg = a => a.reduce((s, x) => s + x, 0) / a.length;
+const num = v => String(Math.round(v * 10) / 10);
+
+function renderChart(readings) {
+  if (readings.length < 2) {
+    $('chart').innerHTML = `<p class="hint">${readings.length ? 'One reading logged (' + num(readings[0].value) + '). Add another to see the trend.' : 'Optional: track one number over time (a watch stress score, mood, sleep hours…) and see how it moves as you write.'}</p>`;
+    return;
+  }
+  const W = 600, H = 170, P = { l: 38, r: 12, t: 12, b: 24 };
+  const vals = readings.map(r => r.value);
+  const mx = Math.max(...vals), mn = Math.min(...vals), pad = (mx - mn) * 0.15 || 1;
+  const lo = mn - pad, hi = mx + pad;
+  const x = i => P.l + i * (W - P.l - P.r) / (readings.length - 1);
+  const y = v => P.t + (hi - v) * (H - P.t - P.b) / (hi - lo);
+  const pts = readings.map((r, i) => `${x(i).toFixed(1)},${y(r.value).toFixed(1)}`).join(' ');
+  $('chart').innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(db.metric)} readings over time">
+      <line x1="${P.l}" x2="${W - P.r}" y1="${y(avg(vals))}" y2="${y(avg(vals))}" stroke="var(--line)" stroke-dasharray="4 4"/>
+      <text x="${P.l - 6}" y="${y(mx) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${num(mx)}</text>
+      ${mx !== mn ? `<text x="${P.l - 6}" y="${y(mn) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${num(mn)}</text>` : ''}
+      <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+      ${readings.map((r, i) => `<circle cx="${x(i)}" cy="${y(r.value)}" r="3.5" fill="var(--accent)"><title>${num(r.value)} — ${esc(fmtDate(r.t))} ${esc(fmtTime(r.t))}</title></circle>`).join('')}
+      <text x="${P.l}" y="${H - 6}" font-size="11" fill="var(--muted)">${esc(fmtDate(readings[0].t))}</text>
+      <text x="${W - P.r}" y="${H - 6}" text-anchor="end" font-size="11" fill="var(--muted)">${esc(fmtDate(readings[readings.length - 1].t))}</text>
+    </svg>`;
+}
+
+function renderPatterns() {
+  const readings = [...db.readings].sort((a, b) => a.t - b.t);
+  const weekAgo = Date.now() - 7 * 864e5;
+  const withTakeaway = db.notes.filter(n => n.takeaway).sort((a, b) => b.created - a.created);
+  const stats = [
+    [db.notes.length, 'notes written'],
+    [db.notes.filter(n => n.created >= weekAgo).length, 'in the last 7 days'],
+    [withTakeaway.length, 'takeaways for the future'],
+    [readings.length ? num(avg(readings.map(r => r.value))) : '–', 'average ' + db.metric.toLowerCase()],
+  ];
+  $('stats').innerHTML = stats.map(([v, l]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join('');
+
+  $('futureList').innerHTML = withTakeaway.length
+    ? withTakeaway.slice(0, 30).map(n => `
+      <button class="future" data-note="${esc(n.id)}" dir="auto"><small>${TYPES[typeOf(n)].short}</small>${esc(n.takeaway)}<span class="from">${esc(fmtDate(n.created))} · from: ${esc(n.text.slice(0, 90))}</span></button>`).join('')
+    : '<p class="hint">When a note has a second part — how it helps later, a solution, a next step — it is collected here so you can reread only the useful conclusions.</p>';
+
+  const typeCounts = Object.keys(TYPES).map(k => [k, db.notes.filter(n => typeOf(n) === k).length]).filter(e => e[1]).sort((a, b) => b[1] - a[1]);
+  $('topTypes').innerHTML = typeCounts.length ? bars(typeCounts, 'ftype', k => TYPES[k].label) : '';
+  const tags = tagCounts().slice(0, 10);
+  $('topTags').innerHTML = tags.length ? bars(tags, 'tag', t => '#' + t) : '<p class="hint">Add tags to your notes to see which areas come up most.</p>';
+  const words = wordCounts();
+  $('topWords').innerHTML = words.length ? bars(words, 'word') : '<p class="hint">Words that appear in two or more of your notes show up here.</p>';
+
+  $('metricTitle').textContent = 'Tracked number — ' + db.metric;
+  renderChart(readings);
+  const wroteDays = new Set(db.notes.map(n => dayKey(n.created)));
+  const on = readings.filter(r => wroteDays.has(dayKey(r.t))).map(r => r.value);
+  const off = readings.filter(r => !wroteDays.has(dayKey(r.t))).map(r => r.value);
+  $('compare').innerHTML = on.length >= 3 && off.length >= 3
+    ? `<p class="hint">Days you wrote: average <b>${num(avg(on))}</b> (${on.length} readings) · days you didn't: average <b>${num(avg(off))}</b> (${off.length} readings).</p>`
+    : (readings.length ? `<p class="hint">Once you have at least 3 readings on days you wrote and 3 on days you didn't, the two averages are compared here.</p>` : '');
+  $('readings').innerHTML = [...readings].reverse().slice(0, 12).map(r =>
+    `<span class="reading">${num(r.value)} · ${esc(fmtDate(r.t))}<button title="Remove reading" data-rid="${esc(r.id)}">×</button></span>`).join('');
+}
+
+$('metricForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const r = cleanReading({ value: $('metricOnly').value });
+  if (!r) return;
+  db.readings.push(r);
+  save(); $('metricOnly').value = ''; renderPatterns();
+});
+$('renameMetric').onclick = () => {
+  const name = (prompt('What number do you want to track?', db.metric) || '').trim();
+  if (name) { db.metric = name.slice(0, 30); save(); renderForm(); renderPatterns(); }
+};
+
+$('viewPatterns').addEventListener('click', e => {
+  const rid = e.target.closest('[data-rid]');
+  if (rid) { db.readings = db.readings.filter(r => r.id !== rid.dataset.rid); save(); renderPatterns(); return; }
+  const hit = e.target.closest('[data-tag],[data-word],[data-ftype],[data-note]');
+  if (!hit) return;
+  const d = hit.dataset;
+  focusId = d.note || null;
+  activeTag = d.tag || null;
+  $('q').value = d.word || '';
+  $('typeFilter').value = d.ftype || 'all';
+  show('notes');
+});
+
+// ---------- Backup ----------
+$('exportBtn').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }));
+  a.download = 'noticed-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!Array.isArray(data.notes)) throw new Error();
+    const merge = (mine, theirs) => {
+      const ids = new Set(mine.map(x => x.id));
+      return mine.concat(theirs.filter(x => x && !ids.has(x.id)));
+    };
+    const before = db.notes.length;
+    db.notes = merge(db.notes, data.notes.map(cleanNote));
+    db.readings = merge(db.readings, (data.readings || data.stress || []).map(cleanReading));
+    save(); render();
+    alert('Imported ' + (db.notes.length - before) + ' new notes.');
+  } catch (err) { alert('That file is not a valid backup.'); }
+  e.target.value = '';
+};
+
+// ---------- Toolkit ----------
+const TOOLS = [
+  { id: 'session', tag: 'idea-session', name: '30-minute idea session', type: 'problem', after: 'protecting your attention (Pavel Durov)',
+    blurb: 'Ten minutes of silence, ten on one problem, ten on solutions. Good when your head is full.',
+    timer: [['Silence — no phone, no input', 10], ['One problem — why does it exist?', 10], ['Solutions — do not judge them', 10]],
+    steps: ['Which problem did you pick, and why does it exist?', 'Every solution that came to mind'], last: 'Which one will you try first?' },
+  { id: 'whys', tag: 'five-whys', name: 'Five whys', type: 'problem', after: 'root-cause analysis at Toyota',
+    blurb: 'Keep asking why until you reach the cause instead of the symptom.',
+    steps: ['Why is this happening?', 'Why is that?', 'And why is that?', 'Why?', 'Why? (the root cause)'], last: 'What would fix the root cause?' },
+  { id: 'assumptions', tag: 'assumptions', name: 'Question the assumptions', type: 'observation', after: 'Richard Feynman',
+    blurb: 'List what is taken for granted and check whether it is evidence or habit.',
+    steps: ['What does everyone (including you) assume here?', 'What evidence actually supports each assumption?', 'What if the opposite were true?'], last: 'What will you test or do differently?' },
+  { id: 'limit', tag: 'thought-experiment', name: 'Remove the limit', type: 'idea', after: "Einstein's thought experiments",
+    blurb: 'Imagine the main constraint is gone and see what that reveals.',
+    steps: ['Which limit makes this hard? (time, money, permission, skill…)', 'Imagine that limit is gone. What would you do?', 'Which part of that is already possible today?'], last: 'Next step' },
+  { id: 'connect', tag: 'connect', name: 'Connect two notes', type: 'idea', pair: true, after: "Darwin's notebooks",
+    blurb: 'Two of your own notes side by side. Look for the link nobody planned.',
+    steps: ['What do these two have in common?', 'What does one suggest about the other?'], last: 'The idea that came from connecting them' },
+  { id: 'pick', tag: 'pick-best', name: 'Pick the best idea', type: 'idea', rank: true, after: 'idea selection — a separate skill from having ideas',
+    blurb: 'List your options, rate impact and effort, and see which is worth doing first.',
+    steps: [], last: 'First step for the winner' },
+  { id: 'daily', tag: 'daily', name: 'Two daily questions', type: 'note', noTopic: true, after: 'Benjamin Franklin',
+    blurb: 'Give the day a direction in the morning and check it in the evening.',
+    steps: ['Morning: what good will I do today?', 'Evening: what good did I do today?'], last: 'Carry into tomorrow' },
+];
+let currentTool = null, pendingTopic = null, pair = [], tm = null;
+const scores = new Map();
+
+function workOn(id) {
+  pendingTopic = id;
+  if (currentTool && $('topicSel') && [...$('topicSel').options].some(o => o.value === id)) { $('topicSel').value = id; topicChanged(); }
+  show('tools');
+}
+
+function renderToolList() {
+  if (currentTool) return;
+  const p = pendingTopic && db.notes.find(n => n.id === pendingTopic);
+  if (!p) pendingTopic = null;
+  $('toolList').innerHTML =
+    (p ? `<div class="chips" style="margin-bottom:12px"><button class="chip on" id="clearTopic" dir="auto">Pick a tool for: ${esc(p.text.slice(0, 60))} ✕</button></div>` : '') +
+    TOOLS.map(t => `<button class="card tool" data-tool="${t.id}"><b>${esc(t.name)}</b><span>${esc(t.blurb)}</span><small>Inspired by: ${esc(t.after)}</small></button>`).join('');
+}
+
+function openTool(id) {
+  const t = TOOLS.find(t => t.id === id);
+  if (t.pair && db.notes.length < 2) { alert('Write at least two notes first, then connect them.'); return; }
+  currentTool = t;
+  scores.clear();
+  const recent = [...db.notes].sort((a, b) => b.created - a.created).slice(0, 60);
+  const p = db.notes.find(n => n.id === pendingTopic);
+  if (p && !recent.includes(p)) recent.unshift(p);
+  $('toolList').classList.add('hidden');
+  $('toolRun').classList.remove('hidden');
+  $('toolRun').innerHTML = `<div class="card">
+    <div class="headrow"><h2>${esc(t.name)}</h2><button type="button" class="ghost" id="toolClose">Close</button></div>
+    <p class="hint" style="margin:0 0 6px">${esc(t.blurb)}</p>
+    ${t.timer ? `<div class="timer"><b id="timerClock"></b><span id="timerPhase"></span><button type="button" class="ghost" id="timerBtn">Start</button><button type="button" class="ghost" id="timerReset">Reset</button></div>` : ''}
+    <form id="toolForm">
+      ${t.pair ? `<div id="pairBox"></div><button type="button" class="ghost" id="shuffle">Show two others</button>`
+        : t.noTopic ? '' : `<label for="topicSel">Working on</label>
+        <select id="topicSel" class="full"><option value="">Something new…</option>${recent.map(n => `<option value="${esc(n.id)}">${esc(TYPES[typeOf(n)].label + ': ' + n.text.slice(0, 70))}</option>`).join('')}</select>
+        <input type="text" id="topicNew" dir="auto" placeholder="Name the problem or topic" style="margin-top:6px">`}
+      ${t.rank ? `<label for="rankIdeas">Ideas, one per line</label><textarea id="rankIdeas" dir="auto"></textarea><div id="rankRows"></div>` : ''}
+      ${t.steps.map((q, i) => `<label for="step${i}">${esc(q)}</label><textarea id="step${i}" dir="auto"></textarea>`).join('')}
+      <label for="stepLast">${esc(t.last)}</label><textarea id="stepLast" dir="auto"></textarea>
+      <div class="row" style="margin-top:10px"><button class="primary">Save as note</button></div>
+    </form></div>`;
+  if ($('topicSel') && p) { $('topicSel').value = p.id; topicChanged(); }
+  if (t.pair) pickPair();
+  if (t.timer) timerReset();
+}
+
+function topicChanged() { $('topicNew').classList.toggle('hidden', !!$('topicSel').value); }
+
+function pickPair() {
+  const pool = [...db.notes], out = [];
+  while (out.length < 2) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  pair = out;
+  $('pairBox').innerHTML = pair.map(n => `<div class="pairnote" dir="auto">${esc(n.text.slice(0, 400))}</div>`).join('');
+}
+
+function rankIdeas() { return [...new Set($('rankIdeas').value.split('\n').map(s => s.trim()).filter(Boolean))]; }
+function ranked() {
+  return rankIdeas().map(idea => { const s = scores.get(idea) || [3, 3]; return { idea, s, v: s[0] / s[1] }; }).sort((a, b) => b.v - a.v);
+}
+function renderRank() {
+  const ideas = rankIdeas();
+  const opts = v => [1, 2, 3, 4, 5].map(n => `<option ${n === v ? 'selected' : ''}>${n}</option>`).join('');
+  $('rankRows').innerHTML = ideas.length ? `<div class="rank head"><span></span><span>Impact 1–5</span><span>Effort 1–5</span></div>` +
+    ideas.map((idea, i) => { const s = scores.get(idea) || [3, 3];
+      return `<div class="rank"><span dir="auto">${esc(idea)}</span><select data-i="${i}" data-k="0" aria-label="Impact">${opts(s[0])}</select><select data-i="${i}" data-k="1" aria-label="Effort">${opts(s[1])}</select></div>`; }).join('') +
+    `<p class="hint" id="rankOut"></p>` : '';
+  renderRankOut();
+}
+function renderRankOut() {
+  const r = ranked();
+  if ($('rankOut')) $('rankOut').textContent = r.length > 1 ? 'Best bet so far (most impact for the effort): ' + r[0].idea : '';
+}
+
+function timerReset() {
+  if (tm && tm.iv) clearInterval(tm.iv);
+  tm = { phase: 0, left: currentTool.timer[0][1] * 60000, end: 0, iv: null };
+  timerDraw();
+}
+function timerDraw() {
+  const t = currentTool.timer, done = tm.phase >= t.length;
+  const s = Math.ceil((done ? 0 : tm.iv ? Math.max(0, tm.end - Date.now()) : tm.left) / 1000);
+  $('timerClock').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  $('timerPhase').textContent = done ? 'Done — write down what you chose.' : `Part ${tm.phase + 1} of ${t.length}: ${t[tm.phase][0]}`;
+  $('timerBtn').textContent = tm.iv ? 'Pause' : 'Start';
+}
+function timerTick() {
+  if (Date.now() >= tm.end) {
+    tm.phase++;
+    if (tm.phase >= currentTool.timer.length) { clearInterval(tm.iv); tm.iv = null; }
+    else tm.end = Date.now() + currentTool.timer[tm.phase][1] * 60000;
+  }
+  timerDraw();
+}
+function timerToggle() {
+  if (tm.phase >= currentTool.timer.length) return;
+  if (tm.iv) { tm.left = Math.max(0, tm.end - Date.now()); clearInterval(tm.iv); tm.iv = null; }
+  else { tm.end = Date.now() + tm.left; tm.iv = setInterval(timerTick, 500); }
+  timerDraw();
+}
+
+function closeTool() {
+  if (tm && tm.iv) clearInterval(tm.iv);
+  tm = null; currentTool = null; pendingTopic = null; pair = [];
+  $('toolRun').innerHTML = '';
+  $('toolRun').classList.add('hidden');
+  $('toolList').classList.remove('hidden');
+  renderToolList();
+}
+
+function saveTool() {
+  const t = currentTool;
+  const src = $('topicSel') && db.notes.find(n => n.id === $('topicSel').value);
+  let head = t.name;
+  if (t.pair) head += '\n' + pair.map(n => '• ' + n.text.slice(0, 120)).join('\n');
+  else if (!t.noTopic) { const topic = src ? src.text : $('topicNew').value.trim(); if (topic) head += ': ' + topic; }
+  const parts = [];
+  if (t.rank) {
+    const r = ranked();
+    if (r.length) parts.push('Ideas ranked by impact for the effort\n' + r.map((x, i) => `${i + 1}. ${x.idea} — impact ${x.s[0]}, effort ${x.s[1]}`).join('\n'));
+  }
+  t.steps.forEach((q, i) => { const a = $('step' + i).value.trim(); if (a) parts.push(q + '\n' + a); });
+  const takeaway = $('stepLast').value.trim();
+  if (!parts.length && !takeaway) { alert('Fill in at least one answer first.'); return; }
+  const id = uid();
+  db.notes.push({ id, created: Date.now(), type: t.type, text: [head, ...parts].join('\n\n'), takeaway,
+    tags: [...new Set([t.tag, ...(src ? src.tags : [])])], resolved: false });
+  save(); closeTool();
+  focusId = id; activeTag = null;
+  show('notes');
+}
+
+$('viewTools').addEventListener('click', e => {
+  const btn = e.target.closest('button'), id = btn && btn.id;
+  const tool = e.target.closest('[data-tool]');
+  if (tool) openTool(tool.dataset.tool);
+  else if (id === 'clearTopic') { pendingTopic = null; renderToolList(); }
+  else if (id === 'toolClose') {
+    const dirty = [...$('toolRun').querySelectorAll('textarea')].some(a => a.value.trim());
+    if (!dirty || confirm('Close without saving? Your answers will be lost.')) closeTool();
+  }
+  else if (id === 'timerBtn') timerToggle();
+  else if (id === 'timerReset') timerReset();
+  else if (id === 'shuffle') pickPair();
+});
+$('viewTools').addEventListener('submit', e => { e.preventDefault(); saveTool(); });
+$('viewTools').addEventListener('input', e => { if (e.target.id === 'rankIdeas') renderRank(); });
+$('viewTools').addEventListener('change', e => {
+  if (e.target.id === 'topicSel') topicChanged();
+  if (e.target.dataset.k) {
+    const idea = rankIdeas()[+e.target.dataset.i], s = (scores.get(idea) || [3, 3]).slice();
+    s[+e.target.dataset.k] = +e.target.value;
+    scores.set(idea, s);
+    renderRankOut();
+  }
+});
+
+// ---------- Tabs ----------
+function show(view) {
+  for (const [v, sec, tab] of [['notes', 'viewNotes', 'tabNotes'], ['tools', 'viewTools', 'tabTools'], ['patterns', 'viewPatterns', 'tabPatterns']]) {
+    $(sec).classList.toggle('hidden', v !== view);
+    $(tab).classList.toggle('on', v === view);
+  }
+  render();
+}
+$('tabNotes').onclick = () => show('notes');
+$('tabTools').onclick = () => show('tools');
+$('tabPatterns').onclick = () => show('patterns');
+
+function render() { renderNotes(); renderToolList(); renderPatterns(); }
+renderForm();
+render();
+
+// ---------- Offline + install ----------
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+// Ask the browser not to clear the notes when the device is low on space.
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+</script>
+</body>
+</html>
